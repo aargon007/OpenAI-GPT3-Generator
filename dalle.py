@@ -43,7 +43,7 @@ client = OpenAI(api_key=openai_api_key) # will use environment variable "OPENAI_
 
 
 prompt = (
- "Subject: marilin monrow with dancing."  # use the space at end
+ "Subject: Wang Zi Qi and wang yu wen are Chinese actor and acctress.they kisses intimately at The Love You Give Me chinesse drama"  # use the space at end
  "Style: ultra original hd"    # this is implicit line continuation
 )
 

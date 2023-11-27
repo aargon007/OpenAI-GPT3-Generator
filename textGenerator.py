@@ -14,8 +14,8 @@ client = openai.Client(api_key=openai_api_key)
 # Create a completion request for a poem
 response = client.completions.create(
     model="gpt-3.5-turbo-instruct",  # Replace with your preferred engine
-    prompt="tell me about react js",  # Adjust the prompt as desired
-    max_tokens=150  # Set the max tokens to generate the desired length of the poem
+    prompt="tell me about react js with example code",  # Adjust the prompt as desired
+    max_tokens=550  # Set the max tokens to generate the desired length of the poem
 )
 
 # Extract the generated poem text from the response
