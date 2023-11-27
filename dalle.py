@@ -31,7 +31,7 @@ if old_package(openai.__version__, "1.2.3"):
                      ">>You should run 'pip install --upgrade openai')")
 
 from openai import OpenAI
-client = OpenAI(api_key="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")  # don't do this, OK?
+client = OpenAI(api_key="")
  # will use environment variable "OPENAI_API_KEY"
 
 prompt = (
