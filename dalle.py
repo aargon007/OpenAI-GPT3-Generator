@@ -1,24 +1,23 @@
 '''
 DALL-E image generation example for openai>1.2.3, saves requested images as files
--- not a code utility, has no input or return
-
-# example pydantic models returned by client.images.generate(**img_params):
-## - when called with "response_format": "url":
-images_response = ImagesResponse(created=1699713836, data=[Image(b64_json=None, revised_prompt=None, url='https://oaidalleapiprodscus.blob.core.windows.net/private/org-abcd/user-abcd/img-12345.png?st=2023-11-11T13%3A43%3A56Z&se=2023-11-11T15%3A43%3A56Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/png&skoid=6aaadede-4fb3-4698-a8f6-684d7786b067&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2023-11-10T21%3A41%3A11Z&ske=2023-11-11T21%3A41%3A11Z&sks=b&skv=2021-08-06&sig=%2BUjl3f6Vdz3u0oRSuERKPzPhFRf7qO8RjwSPGsrQ/d8%3D')])
 
 requires:
+pip install python-dotenv
 pip install --upgrade openai
+pip install requests
 pip install pillow
 '''
 import os
 from io import BytesIO
+from dotenv import load_dotenv
 import openai                  # for handling error types
-from datetime import datetime  # for formatting date returned with images
+from datetime import datetime, timezone  # for formatting date returned with images
 import base64                  # for decoding images if recieved in the reply
 import requests                # for downloading images from URLs
 from PIL import Image          # pillow, for processing image types
 import tkinter as tk           # for GUI thumbnails of what we got
 from PIL import ImageTk        # for GUI thumbnails of what we got
+from openai import OpenAI
 
 def old_package(version, minimum):  # Block old openai python libraries before today's
     version_parts = list(map(int, version.split(".")))
@@ -30,12 +29,21 @@ if old_package(openai.__version__, "1.2.3"):
                      " is less than the minimum version 1.2.3\n\n"
                      ">>You should run 'pip install --upgrade openai')")
 
-from openai import OpenAI
-client = OpenAI(api_key="")
- # will use environment variable "OPENAI_API_KEY"
+# Load environment variables from .env file
+load_dotenv()
+
+# Access the OpenAI API key from the environment
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# Check if the API key is loaded properly
+if openai_api_key is None:
+    raise ValueError("OpenAI API key not found. Check your .env file.")
+
+client = OpenAI(api_key=openai_api_key) # will use environment variable "OPENAI_API_KEY"
+
 
 prompt = (
- "Subject: marilin monrow with dancing"  # use the space at end
+ "Subject: marilin monrow with dancing."  # use the space at end
  "Style: ultra original hd"    # this is implicit line continuation
 )
 
@@ -78,7 +86,7 @@ except Exception as e:
     raise
 
 # make a file name prefix from date-time of response
-images_dt = datetime.utcfromtimestamp(images_response.created)
+images_dt = datetime.fromtimestamp(images_response.created, tz=timezone.utc)
 img_filename = images_dt.strftime('DALLE-%Y%m%d_%H%M%S')  # like 'DALLE-20231111_144356'
 
 # get the prompt used if rewritten by dall-e-3, null if unchanged by AI
@@ -94,6 +102,9 @@ for image in images_response.data:
 
 # Initialize an empty list to store the Image objects
 image_objects = []
+
+# Create the directory if it doesn't exist
+os.makedirs("images", exist_ok=True)
 
 # Check whether lists contain urls that must be downloaded or b64_json images
 if image_url_list and all(image_url_list):
@@ -112,15 +123,16 @@ if image_url_list and all(image_url_list):
                 else:
                     continue
             break
-        image_objects.append(Image.open(BytesIO(response.content)))  # Append the Image object to the list
-        image_objects[i].save(f"{img_filename}_{i}.png")
-        print(f"{img_filename}_{i}.png was saved")
-elif image_data_list and all(image_data_list):  # if there is b64 data
-    # Convert "b64_json" data to png file
+        img_path = f"images/{img_filename}_{i}.png"
+        image_objects.append(Image.open(BytesIO(response.content))) # Append the Image object to the list
+        image_objects[i].save(img_path)
+        print(f"{img_path} was saved")
+elif image_data_list and all(image_data_list):
     for i, data in enumerate(image_data_list):
-        image_objects.append(Image.open(BytesIO(base64.b64decode(data))))  # Append the Image object to the list
-        image_objects[i].save(f"{img_filename}_{i}.png")
-        print(f"{img_filename}_{i}.png was saved")
+        img_path = f"images/{img_filename}_{i}.png"
+        image_objects.append(Image.open(BytesIO(base64.b64decode(data)))) # Append the Image object to the list
+        image_objects[i].save(img_path)
+        print(f"{img_path} was saved")
 else:
     print("No image data was obtained. Maybe bad code?")
 
